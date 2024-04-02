@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:16.2
+    restart: always
+    environment:
+      POSTGRES_USER: autoscaler
+      POSTGRES_PASSWORD: autopass
+      POSTGRES_DB: autoscaler
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432

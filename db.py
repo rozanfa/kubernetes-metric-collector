@@ -25,8 +25,8 @@ def create_tables():
             namespace TEXT,
             cpu_usage DOUBLE PRECISION,
             memory_usage DOUBLE PRECISION,
-            cpu_timestamp TIMESTAMP(6),
-            memory_timestamp TIMESTAMP(6)
+            cpu_timestamp BIGINT,
+            memory_timestamp BIGINT
         )
     """)
 
@@ -38,8 +38,8 @@ def create_tables():
             namespace TEXT,
             cpu_usage DOUBLE PRECISION,
             memory_usage DOUBLE PRECISION,
-            cpu_timestamp TIMESTAMP(6),
-            memory_timestamp TIMESTAMP(6)
+            cpu_timestamp BIGINT,
+            memory_timestamp BIGINT
         )
     """)
 
@@ -49,8 +49,8 @@ def create_tables():
             name TEXT,
             cpu_usage DOUBLE PRECISION,
             memory_usage DOUBLE PRECISION,
-            cpu_timestamp TIMESTAMP(6),
-            memory_timestamp TIMESTAMP(6)
+            cpu_timestamp BIGINT,
+            memory_timestamp BIGINT
         )
     """)
 
@@ -69,7 +69,7 @@ def create_tables():
 def insert_batch_pod_data(conn: connection, pod_data: Dict[str, PodMetric]):
     cur = conn.cursor()
     for pod in pod_data.values():
-        cur.execute("INSERT INTO pods (pod_name, namespace, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp) VALUES (%s, %s, %s, %s, to_timestamp(%s), to_timestamp(%s))", (pod.pod, pod.namespace, pod.cpu_usage, pod.memory_usage, pod.cpu_timestamp, pod.memory_timestamp))
+        cur.execute("INSERT INTO pods (pod_name, namespace, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp) VALUES (%s, %s, %s, %s, %s, %s)", (pod.pod, pod.namespace, pod.cpu_usage, pod.memory_usage, pod.cpu_timestamp, pod.memory_timestamp))
     conn.commit()
     cur.close()
 
@@ -77,7 +77,7 @@ def insert_batch_pod_data(conn: connection, pod_data: Dict[str, PodMetric]):
 def insert_batch_container_data(conn: connection, container_data: Dict[str, ContainerMetric]):
     cur = conn.cursor()
     for container in container_data.values():
-        cur.execute("INSERT INTO containers (pod_name, container_name, namespace, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp) VALUES (%s, %s, %s, %s, %s, to_timestamp(%s), to_timestamp(%s))", (container.pod, container.container, container.namespace, container.cpu_usage, container.memory_usage, container.cpu_timestamp, container.memory_timestamp))
+        cur.execute("INSERT INTO containers (pod_name, container_name, namespace, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp) VALUES (%s, %s, %s, %s, %s, %s, %s)", (container.pod, container.container, container.namespace, container.cpu_usage, container.memory_usage, container.cpu_timestamp, container.memory_timestamp))
 
     conn.commit()
     cur.close()
@@ -86,7 +86,7 @@ def insert_batch_node_data(conn: connection, node_data: Dict[str, NodeMetric]):
     cur = conn.cursor()
 
     for node in node_data.values():
-        cur.execute("INSERT INTO nodes (name, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp) VALUES (%s, %s, %s, to_timestamp(%s), to_timestamp(%s))", (node.name, node.cpu_usage, node.memory_usage, node.cpu_timestamp, node.memory_timestamp))
+        cur.execute("INSERT INTO nodes (name, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp) VALUES (%s, %s, %s, %s, %s)", (node.name, node.cpu_usage, node.memory_usage, node.cpu_timestamp, node.memory_timestamp))
 
     conn.commit()
     cur.close()
@@ -95,7 +95,7 @@ def insert_batch_node_data(conn: connection, node_data: Dict[str, NodeMetric]):
 def insert_error_count_data(conn: connection, error_count: int, timestamp: float):
     cur = conn.cursor()
 
-    cur.execute("INSERT INTO error_count (error_count, timestamp) VALUES (%s, to_timestamp(%s))", (error_count, timestamp))
+    cur.execute("INSERT INTO error_count (error_count, timestamp) VALUES (%s, %s)", (error_count, timestamp))
 
     conn.commit()
     cur.close()

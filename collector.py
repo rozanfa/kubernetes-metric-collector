@@ -75,9 +75,9 @@ def save_to_csv(pod_data: dict, container_data: dict, node_data: dict, error_cou
     error_count_df.to_csv("error_count.csv", mode='a', header=not os.path.exists("error_count.csv"), index=False)
 
 
-def query_all_nodes(scheduler: scheduler, pool: Pool, node_names: list[str]):
+def query_all_nodes(scheduler: scheduler, pool: Pool, node_names: list[str], periode: int = 10):
     # schedule the next call first
-    scheduler.enter(5, 1, query_all_nodes, (scheduler, pool, node_names))
+    scheduler.enter(periode, 1, query_all_nodes, (scheduler, pool, node_names))
     
     for node_name in node_names:
         print("Querying node:", node_name)

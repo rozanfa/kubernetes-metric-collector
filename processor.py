@@ -1,5 +1,5 @@
 from typing import Dict
-from model import PodMetric, ContainerMetric, NodeMetric
+from dataclass import PodMetric, ContainerMetric, NodeMetric
 
 def process_pod_or_container(row: list[str], pods: Dict[str, PodMetric], containers: Dict[str, ContainerMetric]):
     raw_name = row[0]

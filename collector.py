@@ -2,7 +2,6 @@ from processor import process_pod_or_container, process_node
 import time, os
 import pandas as pd
 from multiprocessing.pool import Pool
-from kubernetes.client import ApiClient
 from sched import scheduler
 from kubernetes import client
 from db import connect, insert_batch_container_data, insert_batch_node_data, insert_batch_pod_data, insert_error_count_data
@@ -44,16 +43,18 @@ def query_a_node(node_name: str):
     # Insert data into the database
     print("Inserting data into the database...")
     conn = connect()
-    insert_batch_pod_data(conn, pod_data)
+    insert_timestamp = time.time()
+
+    insert_batch_pod_data(conn, pod_data, insert_timestamp)
     print("Pod data inserted")
 
-    insert_batch_container_data(conn, container_data)
+    insert_batch_container_data(conn, container_data, insert_timestamp)
     print("Container data inserted")
 
-    insert_batch_node_data(conn, node_data)
+    insert_batch_node_data(conn, node_data, insert_timestamp)
     print("Node data inserted")
     
-    insert_error_count_data(conn, error_count, time.time())
+    insert_error_count_data(conn, error_count, insert_timestamp)
     print("Error count inserted")
 
     conn.close()

@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 class PodMetric:
     pod: str
     namespace: str
-    cpu_usage: float = field(init=False)
-    memory_usage: float = field(init=False)
+    cpu: float = field(init=False)
+    memory: float = field(init=False)
     cpu_timestamp: float = field(init=False)
     memory_timestamp: float = field(init=False)
 
@@ -14,16 +14,16 @@ class ContainerMetric:
     pod: str
     container: str
     namespace: str
-    cpu_usage: float = field(init=False)
-    memory_usage: float = field(init=False)
+    cpu: float = field(init=False)
+    memory: float = field(init=False)
     cpu_timestamp: float = field(init=False)
     memory_timestamp: float = field(init=False)
 
 @dataclass
 class NodeMetric:
     name: str
-    cpu_usage: float = field(init=False)
-    memory_usage: float = field(init=False)
+    cpu: float = field(init=False)
+    memory: float = field(init=False)
     cpu_timestamp: float = field(init=False)
     memory_timestamp: float = field(init=False)
 

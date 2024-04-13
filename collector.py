@@ -1,10 +1,10 @@
-from processor import process_pod_or_container, process_node
+from processor import process_pod_or_container, process_node, transform_container
 import time, os
 import pandas as pd
 from multiprocessing.pool import Pool
 from sched import scheduler
 from kubernetes import client
-from db import connect, insert_batch_container_data, insert_batch_node_data, insert_batch_pod_data, insert_error_count_data
+from db import connect, insert_batch_container_data, insert_batch_node_data, insert_batch_pod_data, insert_error_count_data, insert_data
 
 
 def query_a_node(node_name: str): 
@@ -40,20 +40,25 @@ def query_a_node(node_name: str):
         except IndexError:
             print("Error:",row)
 
+    transformed_container_data = transform_container(container_data)
+
     # Insert data into the database
     print("Inserting data into the database...")
     conn = connect()
     insert_timestamp = time.time()
 
-    insert_batch_pod_data(conn, pod_data, insert_timestamp)
-    print("Pod data inserted")
+    # insert_batch_pod_data(conn, pod_data, insert_timestamp)
+    # print("Pod data inserted")
 
-    insert_batch_container_data(conn, container_data, insert_timestamp)
-    print("Container data inserted")
+    # insert_batch_container_data(conn, container_data, insert_timestamp)
+    # print("Container data inserted")
 
-    insert_batch_node_data(conn, node_data, insert_timestamp)
-    print("Node data inserted")
-    
+    # insert_batch_node_data(conn, node_data, insert_timestamp)
+    # print("Node data inserted")
+
+    insert_data(conn, transformed_container_data, insert_timestamp)
+    print("Data inserted")
+
     insert_error_count_data(conn, error_count, insert_timestamp)
     print("Error count inserted")
 

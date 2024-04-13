@@ -4,58 +4,42 @@ import os
 from typing import Dict
 from dataclass import PodMetric, ContainerMetric, NodeMetric
 from psycopg2.extensions import connection
-
+from config_reader import config
+from pandas import DataFrame
 load_dotenv()
 
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
+
 def connect():
     return psycopg2.connect(f"dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD} host=localhost")
+
+def to_table_creation_command(container: str):
+    return f"""
+        {adapt_name(container)}_cpu VARCHAR(255),
+        {adapt_name(container)}_memory VARCHAR(255),
+    """
+
+def adapt_name(namespace: str):
+    return namespace.replace("-", "_")
 
 def create_tables():
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS pods (
-            id SERIAL PRIMARY KEY,
-            pod_name TEXT,
-            namespace TEXT,
-            cpu_usage DOUBLE PRECISION,
-            memory_usage DOUBLE PRECISION,
-            cpu_timestamp BIGINT,
-            memory_timestamp BIGINT,
-            insert_timestamp BIGINT
-        )
-    """)
+    table_commands = "\n".join(list(map(to_table_creation_command, config["containers"].keys())))
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS containers (
-            id SERIAL PRIMARY KEY,
-            pod_name TEXT,
-            container_name TEXT,
-            namespace TEXT,
-            cpu_usage DOUBLE PRECISION,
-            memory_usage DOUBLE PRECISION,
-            cpu_timestamp BIGINT,
-            memory_timestamp BIGINT,
-            insert_timestamp BIGINT
-        )
-    """)
+    command = f"""
+    CREATE TABLE IF NOT EXISTS {adapt_name(config["namespace"])} (
+        id SERIAL PRIMARY KEY,
+        {table_commands}
+        timestamp BIGINT
+    );
+    """
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS nodes (
-            id SERIAL PRIMARY KEY,
-            name TEXT,
-            cpu_usage DOUBLE PRECISION,
-            memory_usage DOUBLE PRECISION,
-            cpu_timestamp BIGINT,
-            memory_timestamp BIGINT,
-            insert_timestamp BIGINT
-        )
-    """)
+    cur.execute(command)
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS error_count (
@@ -65,14 +49,25 @@ def create_tables():
         )
     """)
 
+
     conn.commit()
     cur.close()
     conn.close()
 
+def insert_data(conn: connection, data: DataFrame, timestamp: float):
+    cur = conn.cursor()
+    command = f"""
+    INSERT INTO {adapt_name(config["namespace"])} ({", ".join(list(map(adapt_name, data.columns)))}, timestamp) VALUES ({", ".join(data.values[0])}, {timestamp});
+    """
+    cur.execute(command)
+    conn.commit()
+    cur.close()
+
+
 def insert_batch_pod_data(conn: connection, pod_data: Dict[str, PodMetric], timestamp: float):
     cur = conn.cursor()
     for pod in pod_data.values():
-        cur.execute("INSERT INTO pods (pod_name, namespace, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp, insert_timestamp) VALUES (%s, %s, %s, %s, %s, %s, %s)", (pod.pod, pod.namespace, pod.cpu_usage, pod.memory_usage, pod.cpu_timestamp, pod.memory_timestamp, timestamp))
+        cur.execute("INSERT INTO pods (pod_name, namespace, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp, insert_timestamp) VALUES (%s, %s, %s, %s, %s, %s, %s)", (pod.pod, pod.namespace, pod.cpu, pod.memory, pod.cpu_timestamp, pod.memory_timestamp, timestamp))
     conn.commit()
     cur.close()
 
@@ -80,7 +75,7 @@ def insert_batch_pod_data(conn: connection, pod_data: Dict[str, PodMetric], time
 def insert_batch_container_data(conn: connection, container_data: Dict[str, ContainerMetric], timestamp: float):
     cur = conn.cursor()
     for container in container_data.values():
-        cur.execute("INSERT INTO containers (pod_name, container_name, namespace, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp, insert_timestamp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (container.pod, container.container, container.namespace, container.cpu_usage, container.memory_usage, container.cpu_timestamp, container.memory_timestamp, timestamp))
+        cur.execute("INSERT INTO containers (pod_name, container_name, namespace, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp, insert_timestamp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (container.pod, container.container, container.namespace, container.cpu, container.memory, container.cpu_timestamp, container.memory_timestamp, timestamp))
 
     conn.commit()
     cur.close()
@@ -89,7 +84,7 @@ def insert_batch_node_data(conn: connection, node_data: Dict[str, NodeMetric], t
     cur = conn.cursor()
 
     for node in node_data.values():
-        cur.execute("INSERT INTO nodes (name, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp, insert_timestamp) VALUES (%s, %s, %s, %s, %s, %s)", (node.name, node.cpu_usage, node.memory_usage, node.cpu_timestamp, node.memory_timestamp, timestamp))
+        cur.execute("INSERT INTO nodes (name, cpu_usage, memory_usage, cpu_timestamp, memory_timestamp, insert_timestamp) VALUES (%s, %s, %s, %s, %s, %s)", (node.name, node.cpu, node.memory, node.cpu_timestamp, node.memory_timestamp, timestamp))
 
     conn.commit()
     cur.close()
